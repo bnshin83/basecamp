@@ -45,8 +45,27 @@ Manage research projects across local + gilbreth + gautschi clusters.
 | Project | Local | Gilbreth | Gautschi | Active |
 |---------|-------|----------|----------|--------|
 | upgd | ✓ | ★ | ✓ | gilbreth |
+| paper_convert | ✓ | — | — | local |
 | memorization-survey | ✓ | — | — | — |
 | icml2025 | ✓ | — | — | — |
+
+### paper_convert
+
+ML conference paper analysis system. Location: `~/paper_convert`
+
+**Database**: `unified_fts_v3.sqlite3` (7,931 papers, 89 clusters)
+- NeurIPS 2025: 4,941 papers
+- ICML 2025: 2,990 papers
+
+**Quick Commands**:
+```bash
+cd ~/paper_convert
+python scripts/query_analysis.py clusters                    # List clusters
+python scripts/query_analysis.py search "your query"         # Search papers
+python scripts/query_analysis.py cluster-methods <cluster>   # Get methods
+```
+
+**Skill**: `/paper-qa <question>` - Answer questions with paper citations
 
 ## Commands
 
