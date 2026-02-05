@@ -51,6 +51,13 @@ Manage research projects across local + gilbreth + gautschi clusters.
 ## Commands
 
 ```bash
+# Hub (quick overview)
+./scripts/hub.sh                 # Cluster status, jobs, maintenance
+
+# Jobs & Maintenance
+./scripts/jobs.sh                # Detailed job list across clusters
+./scripts/maintenance.sh         # Maintenance schedules
+
 # Status
 ./scripts/status.sh              # All
 ./scripts/status.sh clusters     # Clusters only
@@ -71,11 +78,21 @@ Manage research projects across local + gilbreth + gautschi clusters.
 ./scripts/transfer.sh gautschi local checkpoints/
 ```
 
+## Experiments
+
+Slurm scripts organized by project in `experiments/`:
+```
+experiments/
+└── upgd/
+    ├── gilbreth_slurm_rl_ant_upgd.sh
+    └── slurm_rl_ant_upgd.sh (gautschi)
+```
+
 ## Typical Workflow
 
 ```bash
-# 1. Check status
-./scripts/status.sh
+# 1. Check hub
+./scripts/hub.sh
 
 # 2. Sync code to cluster
 ./scripts/sync.sh upgd gilbreth
@@ -84,7 +101,7 @@ Manage research projects across local + gilbreth + gautschi clusters.
 ./scripts/submit.sh train.py gilbreth
 
 # 4. Monitor
-ssh gilbreth 'squeue -u shin283'
+./scripts/jobs.sh
 
 # 5. Get results
 ./scripts/transfer.sh gilbreth local outputs/
