@@ -1,0 +1,12 @@
+# Logs
+logs/*.log
+
+# Local secrets
+clusters/*.local.yaml
+.env
+
+# OS files
+.DS_Store
+
+# Archives (can be large)
+experiments/archive/

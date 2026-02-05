@@ -1,0 +1,19 @@
+# Local Machine Configuration
+
+name: local
+type: local
+
+# Paths
+paths:
+  home: "${HOME}"
+  scratch: "${HOME}/scratch"
+  data: "${HOME}/data"
+  results: "${HOME}/results"
+
+# Environment
+environment:
+  conda_env: ml
+
+# GPU info (auto-detected)
+gpu:
+  command: "nvidia-smi --query-gpu=name,memory.total --format=csv,noheader"

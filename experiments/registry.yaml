@@ -1,0 +1,32 @@
+# Experiment Registry
+# Track all experiments across clusters and repos
+
+# Active experiments
+active: []
+
+# Experiment records
+experiments: {}
+
+# Example entry:
+# experiments:
+#   exp_001_baseline:
+#     id: exp_001
+#     name: baseline
+#     status: completed  # pending, running, completed, failed
+#     cluster: rcac
+#     job_id: 12345678
+#     repo: memorization-research
+#     branch: main
+#     config: configs/baseline.yaml
+#     started: 2024-01-10T10:00:00
+#     completed: 2024-01-10T18:30:00
+#     runtime: "8h 30m"
+#     results:
+#       accuracy: 94.5
+#       loss: 0.023
+#     artifacts:
+#       checkpoint: /scratch/user/checkpoints/exp_001/best.pt
+#       logs: /scratch/user/logs/12345678.out
+#       metrics: outputs/exp_001/metrics.json
+#     notes: "Baseline model for comparison"
+#     tags: [baseline, cifar10]

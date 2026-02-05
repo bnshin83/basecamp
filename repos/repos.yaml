@@ -1,0 +1,20 @@
+# Repository Registry
+# Track all repos and their sync status across clusters
+
+repos: {}
+
+# Example entry:
+# repos:
+#   memorization-research:
+#     local_path: "~/projects/memorization-research"
+#     remote_paths:
+#       rcac: "~/projects/memorization-research"
+#     github: "https://github.com/user/memorization-research"
+#     last_sync:
+#       rcac: 2024-01-15T10:30:00
+#     sync_exclude:
+#       - data/
+#       - outputs/
+#       - wandb/
+#       - "*.pt"
+#     notes: "ICML 2025 paper"
