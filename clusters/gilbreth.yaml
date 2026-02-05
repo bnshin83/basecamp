@@ -6,24 +6,62 @@ type: slurm
 # Connection
 host: "gilbreth.rcac.purdue.edu"
 user: "shin283"
+ssh_alias: gilbreth
 
 # Paths
 paths:
   home: "/home/shin283"
   scratch: "/scratch/gilbreth/shin283"
-  upgd: "/scratch/gilbreth/shin283/upgd"
+  conda_envs: "/scratch/gilbreth/shin283/conda_envs"
 
-# SLURM defaults
-slurm:
+# Account & QoS
+account: jhaddock
+qos_available:
+  - normal
+  - standby
+  - training
+
+# Available partitions
+partitions:
+  v100:
+    gpus: NVIDIA V100
+    nodes: 19
+  a10:
+    gpus: NVIDIA A10
+    nodes: 16
+  a30:
+    gpus: NVIDIA A30
+    nodes: 24
+  a100-40gb:
+    gpus: NVIDIA A100 40GB
+    nodes: 32
+  a100-80gb:
+    gpus: NVIDIA A100 80GB
+    nodes: 57
+  h100:
+    gpus: NVIDIA H100
+    nodes: 2
+  training:
+    gpus: mixed
+    nodes: 5
+
+# SLURM defaults for jobs
+slurm_defaults:
   partition: a100-80gb
-  account: jhaddock
-  default_time: "3-00:00:00"
-  default_gpus: 1
-  default_mem: "64G"
-  default_cpus: 14
+  time: "3-00:00:00"
+  gpus: 1
+  mem: "64G"
+  cpus: 14
 
 # Environment setup
 environment:
   modules:
     - cuda
   conda_env: /scratch/gilbreth/shin283/conda_envs/upgd
+
+# Projects on this cluster
+projects:
+  upgd:
+    path: "/scratch/gilbreth/shin283/upgd"
+    conda_env: "/scratch/gilbreth/shin283/conda_envs/upgd"
+    active: true

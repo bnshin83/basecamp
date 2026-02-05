@@ -4,23 +4,41 @@ Manage research projects across local + gilbreth + gautschi clusters.
 
 ## Clusters
 
-| Cluster | Host | Scratch |
-|---------|------|---------|
-| gilbreth | gilbreth.rcac.purdue.edu | /scratch/gilbreth/shin283 |
-| gautschi | gautschi.rcac.purdue.edu | /scratch/gautschi/shin283 |
-| local | Mac | ~/scratch |
+| Cluster | SSH Alias | Scratch | Account |
+|---------|-----------|---------|---------|
+| Gilbreth | `gilbreth` | /scratch/gilbreth/shin283 | jhaddock |
+| Gautschi | `gautschi` | /scratch/gautschi/shin283 | jhaddock |
+| Local | — | ~/scratch | — |
 
-### Cluster Differences
+### Gilbreth (GPU-focused)
 
-| Config | Gilbreth | Gautschi |
-|--------|----------|----------|
-| Partition | `a100-80gb` | `ai` |
-| QoS | — | `normal` |
-| Memory | `64G` | default |
-| CPUs | 14 | 14 |
-| Account | `jhaddock` | `jhaddock` |
-| Python env | Conda (`conda_envs/upgd`) | Venv (`.upgd`) |
-| Modules | `cuda` | `cuda`, `python` |
+| Partition | GPUs | Nodes | Default |
+|-----------|------|-------|---------|
+| a100-80gb | A100 80GB | 57 | ★ |
+| a100-40gb | A100 40GB | 32 | |
+| a30 | A30 | 24 | |
+| a10 | A10 | 16 | |
+| v100 | V100 | 19 | |
+| h100 | H100 | 2 | |
+
+- **QoS**: normal, standby, training
+- **Env**: Conda (`/scratch/gilbreth/shin283/conda_envs/upgd`)
+- **Modules**: `cuda`
+- **Defaults**: 3 days, 64G mem, 14 CPUs, 1 GPU
+
+### Gautschi (General purpose)
+
+| Partition | GPUs | Nodes | Max Time | Default |
+|-----------|------|-------|----------|---------|
+| ai | Yes | 20 | 14 days | ★ |
+| smallgpu | Yes | 6 | 12 hours | |
+| cpu | No | 336 | 14 days | |
+| highmem | No | 6 | 1 day | |
+
+- **QoS**: normal, preemptible
+- **Env**: Venv (`/scratch/gautschi/shin283/upgd/.upgd`)
+- **Modules**: `cuda`, `python`
+- **Defaults**: 3 days, 14 CPUs, 1 GPU
 
 ## Projects
 

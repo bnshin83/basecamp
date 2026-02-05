@@ -6,21 +6,49 @@ type: slurm
 # Connection
 host: "gautschi.rcac.purdue.edu"
 user: "shin283"
+ssh_alias: gautschi
 
 # Paths
 paths:
   home: "/home/shin283"
   scratch: "/scratch/gautschi/shin283"
-  upgd: "/scratch/gautschi/shin283/upgd"
 
-# SLURM defaults
-slurm:
+# Account & QoS
+account: jhaddock
+qos_available:
+  - normal
+  - preemptible
+
+# Available partitions
+partitions:
+  ai:
+    gpus: NVIDIA GPUs
+    nodes: 20
+    max_time: "14-00:00:00"
+  cocosys:
+    gpus: NVIDIA GPUs
+    nodes: 3
+    max_time: "14-00:00:00"
+  cpu:
+    gpus: none
+    nodes: 336
+    max_time: "14-00:00:00"
+  highmem:
+    gpus: none
+    nodes: 6
+    max_time: "1-00:00:00"
+  smallgpu:
+    gpus: NVIDIA GPUs
+    nodes: 6
+    max_time: "12:00:00"
+
+# SLURM defaults for jobs
+slurm_defaults:
   partition: ai
   qos: normal
-  account: jhaddock
-  default_time: "3-00:00:00"
-  default_gpus: 1
-  default_cpus: 14
+  time: "3-00:00:00"
+  gpus: 1
+  cpus: 14
 
 # Environment setup
 environment:
@@ -28,3 +56,10 @@ environment:
     - cuda
     - python
   venv: /scratch/gautschi/shin283/upgd/.upgd
+
+# Projects on this cluster
+projects:
+  upgd:
+    path: "/scratch/gautschi/shin283/upgd"
+    venv: "/scratch/gautschi/shin283/upgd/.upgd"
+    active: true
