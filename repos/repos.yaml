@@ -1,20 +1,40 @@
 # Repository Registry
 # Track all repos and their sync status across clusters
 
-repos: {}
+repos:
+  upgd-research:
+    description: "UPGD research for UAI 2026"
+    local_path: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/2026_UAI"
+    remote_paths:
+      gilbreth: "/scratch/gilbreth/shin283/upgd"
+      gautschi: "/scratch/gautschi/shin283/upgd"
+    github: null  # Add if exists
+    last_sync:
+      gilbreth: null
+      gautschi: null
+    active_cluster: gilbreth  # Primary cluster for this project
+    tags: [upgd, uai2026, active]
 
-# Example entry:
-# repos:
-#   memorization-research:
-#     local_path: "~/projects/memorization-research"
-#     remote_paths:
-#       rcac: "~/projects/memorization-research"
-#     github: "https://github.com/user/memorization-research"
-#     last_sync:
-#       rcac: 2024-01-15T10:30:00
-#     sync_exclude:
-#       - data/
-#       - outputs/
-#       - wandb/
-#       - "*.pt"
-#     notes: "ICML 2025 paper"
+  memorization-survey:
+    description: "Memorization survey paper for NeurIPS 2024"
+    local_path: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/NeurIPS_2024"
+    remote_paths:
+      gilbreth: "/scratch/gilbreth/shin283/memorization"
+      gautschi: "/scratch/gautschi/shin283/memorization"
+    github: null
+    last_sync:
+      gilbreth: null
+      gautschi: null
+    active_cluster: null
+    tags: [memorization, neurips2024, survey]
+
+  icml2025-paper:
+    description: "ICML 2025 paper - Memorization & Plasticity"
+    local_path: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/ICML2025_Template"
+    remote_paths:
+      gilbreth: null
+      gautschi: null
+    github: null
+    last_sync: {}
+    active_cluster: null
+    tags: [icml2025, memorization, plasticity]

@@ -4,31 +4,54 @@
 set -e
 
 REPO=$1
-CLUSTER=${2:-rcac}
-DRY_RUN=${3:-}
+CLUSTER=${2:-gilbreth}
+DRY_RUN=$3
 
 BASECAMP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 if [ -z "$REPO" ]; then
-    echo "Usage: ./sync.sh <repo_path> [cluster] [--dry-run]"
+    echo "Usage: ./sync.sh <repo_name or path> [cluster] [--dry-run]"
+    echo ""
+    echo "Repos:"
+    grep -E "^  [a-z].*:" "$BASECAMP_DIR/repos/repos.yaml" | sed 's/://g' | while read repo; do
+        echo "  • $repo"
+    done
+    echo ""
+    echo "Clusters: gilbreth, gautschi"
     echo ""
     echo "Examples:"
-    echo "  ./sync.sh ~/projects/myrepo rcac"
-    echo "  ./sync.sh . rcac --dry-run"
+    echo "  ./sync.sh upgd-research gilbreth"
+    echo "  ./sync.sh memorization-survey gautschi"
+    echo "  ./sync.sh /path/to/repo gilbreth --dry-run"
     exit 1
 fi
 
-# Resolve repo path
-if [ "$REPO" = "." ]; then
-    REPO_PATH=$(pwd)
+# Resolve repo path from registry or use direct path
+if [ -f "$BASECAMP_DIR/repos/repos.yaml" ] && grep -q "^  $REPO:" "$BASECAMP_DIR/repos/repos.yaml"; then
+    # Get local path from registry
+    REPO_PATH=$(grep -A1 "^  $REPO:" "$BASECAMP_DIR/repos/repos.yaml" | grep "local_path" | sed 's/.*local_path: *"//;s/".*//')
+    REPO_NAME=$REPO
+
+    # Get remote path
+    REMOTE_PATH=$(grep -A10 "^  $REPO:" "$BASECAMP_DIR/repos/repos.yaml" | grep "$CLUSTER:" | head -1 | sed 's/.*: *"//;s/".*//')
 else
-    REPO_PATH=$(cd "$REPO" && pwd)
+    # Direct path
+    if [ -d "$REPO" ]; then
+        REPO_PATH=$(cd "$REPO" && pwd)
+    else
+        echo "Error: Repo '$REPO' not found in registry or as path"
+        exit 1
+    fi
+    REPO_NAME=$(basename "$REPO_PATH")
+    REMOTE_PATH="/scratch/$CLUSTER/shin283/$REPO_NAME"
 fi
-REPO_NAME=$(basename "$REPO_PATH")
 
 echo "═══════════════════════════════════════════════════════════"
 echo "  Sync: $REPO_NAME → $CLUSTER"
 echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "Local:  $REPO_PATH"
+echo "Remote: $REMOTE_PATH"
 
 # Default excludes
 EXCLUDES=(
@@ -58,30 +81,26 @@ for ex in "${EXCLUDES[@]}"; do
     EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude='$ex'"
 done
 
-# Determine destination
-case $CLUSTER in
-    rcac)
-        DEST="rcac:~/projects/$REPO_NAME/"
-        ;;
-    *)
-        echo "Unknown cluster: $CLUSTER"
-        exit 1
-        ;;
-esac
+DEST="$CLUSTER:$REMOTE_PATH/"
 
-# Check for uncommitted changes
+# Pre-sync checks
 echo ""
 echo "Pre-sync checks:"
 cd "$REPO_PATH"
 if [ -d ".git" ]; then
-    CHANGES=$(git status --porcelain | wc -l)
+    CHANGES=$(git status --porcelain 2>/dev/null | wc -l)
     if [ "$CHANGES" -gt 0 ]; then
         echo "  ⚠️  $CHANGES uncommitted changes"
     else
         echo "  ✅ Git clean"
     fi
-    echo "  📍 Branch: $(git branch --show-current)"
+    echo "  📍 Branch: $(git branch --show-current 2>/dev/null || echo 'N/A')"
 fi
+
+# Ensure remote directory exists
+echo ""
+echo "Ensuring remote directory exists..."
+ssh $CLUSTER "mkdir -p $REMOTE_PATH"
 
 # Sync
 echo ""
@@ -95,8 +114,9 @@ else
     echo ""
     echo "✅ Sync complete: $REPO_NAME → $CLUSTER"
 
-    # Update registry
-    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) SYNC $REPO_NAME → $CLUSTER" >> "$BASECAMP_DIR/logs/sync.log"
+    # Update registry timestamp
+    TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    echo "$TIMESTAMP SYNC $REPO_NAME → $CLUSTER:$REMOTE_PATH" >> "$BASECAMP_DIR/logs/sync.log"
 fi
 
 echo "═══════════════════════════════════════════════════════════"

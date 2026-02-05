@@ -1,86 +1,80 @@
 # Basecamp
 
-Central hub for managing experiments across clusters and repositories.
-
-## Quick Commands
-
-| Command | Description |
-|---------|-------------|
-| `./scripts/status.sh` | Check all clusters |
-| `./scripts/sync.sh <repo> <cluster>` | Sync repo to cluster |
-| `./scripts/transfer.sh <src> <dest> <path>` | Transfer files |
-| `./scripts/submit.sh <script> [cluster]` | Submit SLURM job |
+Central hub for tracking experiments across Purdue clusters and repos.
 
 ## Clusters
 
-### RCAC (Purdue)
-```bash
-# SSH alias (add to ~/.ssh/config)
-Host rcac
-    HostName scholar.rcac.purdue.edu
-    User YOUR_USERNAME
+| Name | Host | Scratch |
+|------|------|---------|
+| gilbreth | gilbreth.rcac.purdue.edu | /scratch/gilbreth/shin283 |
+| gautschi | gautschi.rcac.purdue.edu | /scratch/gautschi/shin283 |
+| local | localhost | ~/scratch |
 
-# Check status
-./scripts/status.sh rcac
+## Tracked Repos
+
+| Repo | Description | Active Cluster |
+|------|-------------|----------------|
+| upgd-research | UPGD research for UAI 2026 | gilbreth |
+| memorization-survey | NeurIPS 2024 survey paper | - |
+| icml2025-paper | ICML 2025 Memorization & Plasticity | - |
+
+## Quick Commands
+
+```bash
+# Check all clusters and repos
+./scripts/status.sh
+
+# Sync repo to cluster
+./scripts/sync.sh upgd-research gilbreth
+./scripts/sync.sh memorization-survey gautschi
+
+# Transfer results
+./scripts/transfer.sh gilbreth local outputs/
+./scripts/transfer.sh gautschi local /scratch/gautschi/shin283/upgd/checkpoints/
 
 # Submit job
-./scripts/submit.sh train.py rcac
+./scripts/submit.sh train.py gilbreth
+./scripts/submit.sh train.py gautschi --gres=gpu:2
 ```
-
-### Local
-```bash
-./scripts/status.sh local
-```
-
-## Workflows
-
-### Start Experiment on RCAC
-```bash
-# 1. Sync your code
-./scripts/sync.sh ~/projects/myrepo rcac
-
-# 2. Submit job
-./scripts/submit.sh train.py rcac --gres=gpu:2 --time=48:00:00
-
-# 3. Monitor
-ssh rcac 'squeue -u $USER'
-```
-
-### Get Results
-```bash
-# Transfer outputs
-./scripts/transfer.sh rcac local outputs/exp1/
-
-# Or specific checkpoint
-./scripts/transfer.sh rcac local checkpoints/best.pt
-```
-
-### Track Experiment
-Edit `experiments/registry.yaml` to log:
-- Experiment name, config
-- Cluster, job ID
-- Results, artifacts
-- Notes
-
-## File Locations
-
-| Type | RCAC | Local |
-|------|------|-------|
-| Code | `~/projects/` | `~/projects/` |
-| Scratch | `/scratch/scholar/$USER/` | `~/scratch/` |
-| Data | `/depot/project/data/` | `~/data/` |
-| Logs | `/scratch/$USER/logs/` | `./logs/` |
 
 ## SSH Config
 
 Add to `~/.ssh/config`:
 ```
-Host rcac
-    HostName scholar.rcac.purdue.edu
-    User YOUR_USERNAME
+Host gilbreth
+    HostName gilbreth.rcac.purdue.edu
+    User shin283
     IdentityFile ~/.ssh/id_rsa
-    ServerAliveInterval 60
-    ServerAliveCountMax 3
+
+Host gautschi
+    HostName gautschi.rcac.purdue.edu
+    User shin283
+    IdentityFile ~/.ssh/id_rsa
 ```
 
-Then use `ssh rcac` or `rsync ... rcac:path`.
+## Workflow
+
+### Start New Experiment
+```bash
+# 1. Sync code
+./scripts/sync.sh upgd-research gilbreth
+
+# 2. Submit job
+./scripts/submit.sh train.py gilbreth --gres=gpu:2 --time=48:00:00
+
+# 3. Monitor
+ssh gilbreth 'squeue -u shin283'
+```
+
+### Get Results
+```bash
+./scripts/transfer.sh gilbreth local outputs/exp1/
+```
+
+## File Locations
+
+| Type | Gilbreth | Gautschi |
+|------|----------|----------|
+| Scratch | /scratch/gilbreth/shin283 | /scratch/gautschi/shin283 |
+| UPGD | /scratch/gilbreth/shin283/upgd | /scratch/gautschi/shin283/upgd |
+| Logs | /scratch/gilbreth/shin283/logs | /scratch/gautschi/shin283/logs |

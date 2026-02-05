@@ -1,0 +1,30 @@
+# Purdue Gautschi Cluster Configuration
+
+name: gautschi
+type: slurm
+
+# Connection
+host: "gautschi.rcac.purdue.edu"
+user: "shin283"
+
+# Paths
+paths:
+  home: "/home/shin283"
+  scratch: "/scratch/gautschi/shin283"
+  upgd: "/scratch/gautschi/shin283/upgd"
+
+# SLURM defaults
+slurm:
+  partition: gpu
+  account: null
+  default_time: "24:00:00"
+  default_gpus: 1
+  default_mem: "32G"
+  default_cpus: 8
+
+# Environment setup
+environment:
+  modules:
+    - anaconda
+    - cuda
+  conda_env: ml

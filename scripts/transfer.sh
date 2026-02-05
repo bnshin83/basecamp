@@ -13,10 +13,13 @@ BASECAMP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -z "$SOURCE" ] || [ -z "$DEST" ] || [ -z "$PATH_ARG" ]; then
     echo "Usage: ./transfer.sh <source> <dest> <path> [--dry-run]"
     echo ""
+    echo "Clusters: gilbreth, gautschi, local"
+    echo ""
     echo "Examples:"
-    echo "  ./transfer.sh rcac local outputs/exp1/"
-    echo "  ./transfer.sh local rcac checkpoints/best.pt"
-    echo "  ./transfer.sh rcac local /scratch/user/results/ --dry-run"
+    echo "  ./transfer.sh gilbreth local outputs/exp1/"
+    echo "  ./transfer.sh gautschi local /scratch/gautschi/shin283/upgd/checkpoints/"
+    echo "  ./transfer.sh local gilbreth ./data/processed/"
+    echo "  ./transfer.sh gilbreth gautschi /scratch/gilbreth/shin283/model.pt"
     exit 1
 fi
 
@@ -30,11 +33,18 @@ resolve_path() {
     local path=$2
 
     case $cluster in
-        rcac)
+        gilbreth)
             if [[ "$path" == /* ]]; then
-                echo "rcac:$path"
+                echo "gilbreth:$path"
             else
-                echo "rcac:~/projects/\$(basename \$PWD)/$path"
+                echo "gilbreth:/scratch/gilbreth/shin283/$path"
+            fi
+            ;;
+        gautschi)
+            if [[ "$path" == /* ]]; then
+                echo "gautschi:$path"
+            else
+                echo "gautschi:/scratch/gautschi/shin283/$path"
             fi
             ;;
         local)
@@ -44,11 +54,21 @@ resolve_path() {
                 echo "./$path"
             fi
             ;;
+        *)
+            echo "Unknown cluster: $cluster"
+            exit 1
+            ;;
     esac
 }
 
 SOURCE_PATH=$(resolve_path "$SOURCE" "$PATH_ARG")
 DEST_PATH=$(resolve_path "$DEST" "$PATH_ARG")
+
+# For local destination, ensure directory exists
+if [ "$DEST" = "local" ]; then
+    DEST_DIR=$(dirname "$PATH_ARG")
+    mkdir -p "$DEST_DIR" 2>/dev/null || true
+fi
 
 echo ""
 echo "From: $SOURCE_PATH"
@@ -67,7 +87,8 @@ else
     echo "✅ Transfer complete"
 
     # Log
-    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) TRANSFER $SOURCE:$PATH_ARG → $DEST" >> "$BASECAMP_DIR/logs/transfer.log"
+    TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    echo "$TIMESTAMP TRANSFER $SOURCE:$PATH_ARG → $DEST" >> "$BASECAMP_DIR/logs/transfer.log"
 fi
 
 echo "═══════════════════════════════════════════════════════════"
