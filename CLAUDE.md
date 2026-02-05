@@ -1,80 +1,61 @@
 # Basecamp
 
-Central hub for tracking experiments across Purdue clusters and repos.
+Manage research projects across local + gilbreth + gautschi clusters.
 
 ## Clusters
 
-| Name | Host | Scratch |
-|------|------|---------|
+| Cluster | Host | Scratch |
+|---------|------|---------|
 | gilbreth | gilbreth.rcac.purdue.edu | /scratch/gilbreth/shin283 |
 | gautschi | gautschi.rcac.purdue.edu | /scratch/gautschi/shin283 |
-| local | localhost | ~/scratch |
+| local | Mac | ~/scratch |
 
-## Tracked Repos
+## Projects
 
-| Repo | Description | Active Cluster |
-|------|-------------|----------------|
-| upgd-research | UPGD research for UAI 2026 | gilbreth |
-| memorization-survey | NeurIPS 2024 survey paper | - |
-| icml2025-paper | ICML 2025 Memorization & Plasticity | - |
+| Project | Local | Gilbreth | Gautschi | Active |
+|---------|-------|----------|----------|--------|
+| upgd | ✓ | ★ | ✓ | gilbreth |
+| memorization-survey | ✓ | — | — | — |
+| icml2025 | ✓ | — | — | — |
 
-## Quick Commands
+## Commands
 
 ```bash
-# Check all clusters and repos
-./scripts/status.sh
+# Status
+./scripts/status.sh              # All
+./scripts/status.sh clusters     # Clusters only
+./scripts/status.sh projects     # Projects only
 
-# Sync repo to cluster
-./scripts/sync.sh upgd-research gilbreth
-./scripts/sync.sh memorization-survey gautschi
-
-# Transfer results
-./scripts/transfer.sh gilbreth local outputs/
-./scripts/transfer.sh gautschi local /scratch/gautschi/shin283/upgd/checkpoints/
+# Sync project
+./scripts/sync.sh upgd gilbreth           # local → gilbreth
+./scripts/sync.sh upgd gautschi           # local → gautschi
+./scripts/sync.sh upgd gilbreth --pull    # gilbreth → local
+./scripts/sync.sh upgd gautschi --pull    # gautschi → local
 
 # Submit job
 ./scripts/submit.sh train.py gilbreth
 ./scripts/submit.sh train.py gautschi --gres=gpu:2
+
+# Transfer files
+./scripts/transfer.sh gilbreth local outputs/
+./scripts/transfer.sh gautschi local checkpoints/
 ```
 
-## SSH Config
+## Typical Workflow
 
-Add to `~/.ssh/config`:
-```
-Host gilbreth
-    HostName gilbreth.rcac.purdue.edu
-    User shin283
-    IdentityFile ~/.ssh/id_rsa
-
-Host gautschi
-    HostName gautschi.rcac.purdue.edu
-    User shin283
-    IdentityFile ~/.ssh/id_rsa
-```
-
-## Workflow
-
-### Start New Experiment
 ```bash
-# 1. Sync code
-./scripts/sync.sh upgd-research gilbreth
+# 1. Check status
+./scripts/status.sh
 
-# 2. Submit job
-./scripts/submit.sh train.py gilbreth --gres=gpu:2 --time=48:00:00
+# 2. Sync code to cluster
+./scripts/sync.sh upgd gilbreth
 
-# 3. Monitor
+# 3. Submit job
+./scripts/submit.sh train.py gilbreth
+
+# 4. Monitor
 ssh gilbreth 'squeue -u shin283'
+
+# 5. Get results
+./scripts/transfer.sh gilbreth local outputs/
 ```
-
-### Get Results
-```bash
-./scripts/transfer.sh gilbreth local outputs/exp1/
-```
-
-## File Locations
-
-| Type | Gilbreth | Gautschi |
-|------|----------|----------|
-| Scratch | /scratch/gilbreth/shin283 | /scratch/gautschi/shin283 |
-| UPGD | /scratch/gilbreth/shin283/upgd | /scratch/gautschi/shin283/upgd |
-| Logs | /scratch/gilbreth/shin283/logs | /scratch/gautschi/shin283/logs |

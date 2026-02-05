@@ -1,52 +1,112 @@
 # Basecamp
 
-Central hub for tracking experiments across Purdue RCAC clusters and research repositories.
+Central hub for managing research projects across local Mac and Purdue RCAC clusters.
 
-## Setup
+## Overview
 
-### Clusters
-- **Gilbreth**: gilbreth.rcac.purdue.edu
-- **Gautschi**: gautschi.rcac.purdue.edu
+Each project can exist in **3 locations**:
+- **Local** (Mac)
+- **Gilbreth** cluster
+- **Gautschi** cluster
 
-### Tracked Repos
-- `upgd-research` - UAI 2026 UPGD paper
-- `memorization-survey` - NeurIPS 2024 survey
-- `icml2025-paper` - ICML 2025 paper
+Basecamp tracks where each project is deployed and helps sync between them.
 
 ## Quick Start
 
 ```bash
-# Check status of all clusters
+cd ~/basecamp
+
+# See everything: clusters, local, projects
 ./scripts/status.sh
 
-# Sync code to cluster
-./scripts/sync.sh upgd-research gilbreth
+# Sync project to cluster
+./scripts/sync.sh upgd gilbreth           # Push local → gilbreth
+./scripts/sync.sh upgd gautschi --pull    # Pull gautschi → local
 
 # Submit job
 ./scripts/submit.sh train.py gilbreth
 
-# Get results back
+# Transfer results
 ./scripts/transfer.sh gilbreth local outputs/
 ```
 
-## Structure
+## Status Output
 
 ```
-basecamp/
-├── clusters/           # Cluster configs
-│   ├── gilbreth.yaml
-│   ├── gautschi.yaml
-│   └── local.yaml
-├── experiments/        # Experiment registry
-│   └── registry.yaml
-├── repos/              # Tracked repos
-│   └── repos.yaml
-├── scripts/            # Utility scripts
-│   ├── status.sh       # Check cluster status
-│   ├── sync.sh         # Sync repo to cluster
-│   ├── transfer.sh     # Transfer files
-│   └── submit.sh       # Submit SLURM jobs
-└── logs/               # Operation logs
+═══════════════════════════════════════════════════════════
+  Basecamp Status - 2024-01-15 14:30:00
+═══════════════════════════════════════════════════════════
+
+🖥️  gilbreth
+  ✅ Connected
+  Jobs: 2 running, 1 pending
+  Projects:
+    upgd                 4.2G
+
+🖥️  gautschi
+  ✅ Connected
+  Jobs: 0 running, 0 pending
+  Projects:
+    upgd                 3.8G
+
+💻 Local
+  Running experiments: 0
+  Disk: 450G free of 1T
+
+📁 Projects Overview
+
+  PROJECT            ACTIVE LOCAL    GILBRETH GAUTSCHI
+  upgd               ✓      ✓        ★        ✓
+  memorization-survey       ✓        —        —
+  icml2025                  ✓        —        —
+
+  Legend: ✓ = exists, ★ = active cluster, — = not deployed
+```
+
+## Projects
+
+Defined in `projects/projects.yaml`:
+
+| Project | Description | Active Cluster |
+|---------|-------------|----------------|
+| upgd | UAI 2026 - UPGD research | gilbreth |
+| memorization-survey | NeurIPS 2024 survey | - |
+| icml2025 | ICML 2025 paper | - |
+
+## Scripts
+
+### status.sh
+```bash
+./scripts/status.sh              # Everything
+./scripts/status.sh clusters     # Both clusters only
+./scripts/status.sh gilbreth     # Gilbreth only
+./scripts/status.sh projects     # Project overview
+```
+
+### sync.sh
+```bash
+./scripts/sync.sh <project> [cluster] [--push|--pull] [--dry-run]
+
+./scripts/sync.sh upgd gilbreth           # Push to gilbreth
+./scripts/sync.sh upgd gautschi           # Push to gautschi
+./scripts/sync.sh upgd gilbreth --pull    # Pull from gilbreth
+./scripts/sync.sh upgd gilbreth --dry-run # Preview changes
+```
+
+### submit.sh
+```bash
+./scripts/submit.sh <script.py> [cluster] [slurm_args]
+
+./scripts/submit.sh train.py gilbreth
+./scripts/submit.sh train.py gautschi --gres=gpu:2 --time=48:00:00
+```
+
+### transfer.sh
+```bash
+./scripts/transfer.sh <source> <dest> <path>
+
+./scripts/transfer.sh gilbreth local outputs/
+./scripts/transfer.sh gautschi local checkpoints/best.pt
 ```
 
 ## SSH Config
@@ -62,29 +122,40 @@ Host gautschi
     User shin283
 ```
 
-## Scripts
+## Structure
 
-### status.sh
-```bash
-./scripts/status.sh           # All clusters
-./scripts/status.sh gilbreth  # Gilbreth only
-./scripts/status.sh repos     # Show tracked repos
+```
+basecamp/
+├── clusters/           # Cluster configs
+│   ├── gilbreth.yaml
+│   ├── gautschi.yaml
+│   └── local.yaml
+├── projects/           # Project registry
+│   └── projects.yaml
+├── experiments/        # Experiment tracking
+│   └── registry.yaml
+├── scripts/
+│   ├── status.sh
+│   ├── sync.sh
+│   ├── submit.sh
+│   └── transfer.sh
+└── logs/
 ```
 
-### sync.sh
-```bash
-./scripts/sync.sh upgd-research gilbreth
-./scripts/sync.sh /path/to/repo gautschi --dry-run
-```
+## Adding a New Project
 
-### transfer.sh
-```bash
-./scripts/transfer.sh gilbreth local outputs/
-./scripts/transfer.sh gautschi local /scratch/gautschi/shin283/checkpoints/
-```
+Edit `projects/projects.yaml`:
 
-### submit.sh
-```bash
-./scripts/submit.sh train.py gilbreth
-./scripts/submit.sh train.py gautschi --gres=gpu:2 --time=48:00:00
+```yaml
+  my-new-project:
+    name: "My New Project"
+    description: "What it does"
+    active: true
+    locations:
+      local: "/path/on/mac"
+      gilbreth: "/scratch/gilbreth/shin283/my-new-project"
+      gautschi: "/scratch/gautschi/shin283/my-new-project"
+    last_sync: {}
+    active_cluster: gilbreth
+    tags: [tag1, tag2]
 ```

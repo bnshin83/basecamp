@@ -1,127 +1,167 @@
 #!/bin/bash
-# Check status of all clusters
+# Unified status: clusters + projects
 
-CLUSTER=${1:-all}
+WHAT=${1:-all}
 BASECAMP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-echo "═══════════════════════════════════════════════════════════"
-echo "  Basecamp Status - $(date '+%Y-%m-%d %H:%M:%S')"
-echo "═══════════════════════════════════════════════════════════"
+print_header() {
+    echo "═══════════════════════════════════════════════════════════"
+    echo "  Basecamp Status - $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "═══════════════════════════════════════════════════════════"
+}
 
-# Gilbreth Status
-check_gilbreth() {
+# Check cluster connection and jobs
+check_cluster() {
+    local CLUSTER=$1
+
     echo ""
-    echo "🖥️  Gilbreth (Purdue)"
+    echo "🖥️  $CLUSTER (${CLUSTER}.rcac.purdue.edu)"
     echo "───────────────────────────────────────────────────────────"
 
-    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes gilbreth "echo connected" &>/dev/null; then
-        echo "❌ Cannot connect to Gilbreth"
+    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes $CLUSTER "echo ok" &>/dev/null; then
+        echo "  ❌ Cannot connect"
         return 1
     fi
 
-    echo "✅ Connected"
-    echo ""
-    echo "Running Jobs:"
-    ssh gilbreth "squeue -u shin283 --format='  %.10i %.20j %.8T %.10M %.4C %.6m %R' 2>/dev/null" | head -10
+    echo "  ✅ Connected"
 
-    RUNNING=$(ssh gilbreth "squeue -u shin283 -h --state=running 2>/dev/null | wc -l")
-    PENDING=$(ssh gilbreth "squeue -u shin283 -h --state=pending 2>/dev/null | wc -l")
-    echo ""
-    echo "Summary: $RUNNING running, $PENDING pending"
+    # Jobs summary
+    RUNNING=$(ssh $CLUSTER "squeue -u shin283 -h --state=running 2>/dev/null | wc -l" | tr -d ' ')
+    PENDING=$(ssh $CLUSTER "squeue -u shin283 -h --state=pending 2>/dev/null | wc -l" | tr -d ' ')
+    echo "  Jobs: $RUNNING running, $PENDING pending"
 
-    echo ""
-    echo "Scratch usage:"
-    ssh gilbreth "du -sh /scratch/gilbreth/shin283/* 2>/dev/null | head -5" || echo "  Unable to check"
-}
-
-# Gautschi Status
-check_gautschi() {
-    echo ""
-    echo "🖥️  Gautschi (Purdue)"
-    echo "───────────────────────────────────────────────────────────"
-
-    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes gautschi "echo connected" &>/dev/null; then
-        echo "❌ Cannot connect to Gautschi"
-        return 1
+    # Show running jobs
+    if [ "$RUNNING" -gt 0 ]; then
+        echo ""
+        ssh $CLUSTER "squeue -u shin283 --state=running --format='    %8i %20j %10M %4C %6m %R' 2>/dev/null" | head -6
     fi
 
-    echo "✅ Connected"
+    # Projects on this cluster
     echo ""
-    echo "Running Jobs:"
-    ssh gautschi "squeue -u shin283 --format='  %.10i %.20j %.8T %.10M %.4C %.6m %R' 2>/dev/null" | head -10
-
-    RUNNING=$(ssh gautschi "squeue -u shin283 -h --state=running 2>/dev/null | wc -l")
-    PENDING=$(ssh gautschi "squeue -u shin283 -h --state=pending 2>/dev/null | wc -l")
-    echo ""
-    echo "Summary: $RUNNING running, $PENDING pending"
-
-    echo ""
-    echo "Scratch usage:"
-    ssh gautschi "du -sh /scratch/gautschi/shin283/* 2>/dev/null | head -5" || echo "  Unable to check"
+    echo "  Projects:"
+    PROJECTS=$(ssh $CLUSTER "ls -d /scratch/$CLUSTER/shin283/*/ 2>/dev/null | xargs -n1 basename" 2>/dev/null)
+    if [ -z "$PROJECTS" ]; then
+        echo "    (none)"
+    else
+        echo "$PROJECTS" | while read p; do
+            SIZE=$(ssh $CLUSTER "du -sh /scratch/$CLUSTER/shin283/$p 2>/dev/null | cut -f1")
+            printf "    %-20s %s\n" "$p" "$SIZE"
+        done
+    fi
 }
 
-# Local Status
+# Check local
 check_local() {
     echo ""
     echo "💻 Local (Mac)"
     echo "───────────────────────────────────────────────────────────"
 
-    # GPU status
-    if command -v nvidia-smi &>/dev/null; then
-        echo "GPUs:"
-        nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu \
-            --format=csv,noheader 2>/dev/null | while read line; do
-            echo "  $line"
-        done
-    else
-        echo "  No NVIDIA GPU (Mac)"
-    fi
+    # Running experiments
+    PROCS=$(ps aux | grep -E "python.*train|python.*experiment" | grep -v grep | wc -l | tr -d ' ')
+    echo "  Running experiments: $PROCS"
 
-    echo ""
-    echo "Running experiments:"
-    PROCS=$(ps aux | grep -E "python.*train|python.*experiment" | grep -v grep | wc -l)
-    if [ "$PROCS" -gt 0 ]; then
-        ps aux | grep -E "python.*train|python.*experiment" | grep -v grep | awk '{print "  PID " $2 ": " $11 " " $12}' | head -5
-    else
-        echo "  None"
-    fi
-
-    echo ""
-    echo "Disk:"
-    df -h ~ 2>/dev/null | tail -1 | awk '{print "  Home: " $4 " free of " $2}'
+    # Disk
+    DISK=$(df -h ~ 2>/dev/null | tail -1 | awk '{print $4 " free of " $2}')
+    echo "  Disk: $DISK"
 }
 
-# Show tracked repos
-show_repos() {
+# Show all projects with locations
+show_projects() {
     echo ""
-    echo "📁 Tracked Repos"
+    echo "📁 Projects Overview"
     echo "───────────────────────────────────────────────────────────"
-    if [ -f "$BASECAMP_DIR/repos/repos.yaml" ]; then
-        grep -E "^  [a-z].*:" "$BASECAMP_DIR/repos/repos.yaml" | sed 's/://g' | while read repo; do
-            echo "  • $repo"
-        done
+    echo ""
+    printf "  %-18s %-6s %-8s %-8s %-8s\n" "PROJECT" "ACTIVE" "LOCAL" "GILBRETH" "GAUTSCHI"
+    printf "  %-18s %-6s %-8s %-8s %-8s\n" "───────" "──────" "─────" "────────" "────────"
+
+    # Simple YAML parsing
+    local current=""
+    local active=""
+    local has_local=""
+    local has_gilbreth=""
+    local has_gautschi=""
+    local active_cluster=""
+
+    while IFS= read -r line; do
+        # New project
+        if [[ "$line" =~ ^[[:space:]]{2}([a-z0-9_-]+):$ ]]; then
+            # Print previous project
+            if [ -n "$current" ]; then
+                local_mark="—"
+                gilbreth_mark="—"
+                gautschi_mark="—"
+                [ "$has_local" = "yes" ] && local_mark="✓"
+                [ "$has_gilbreth" = "yes" ] && gilbreth_mark="✓"
+                [ "$has_gautschi" = "yes" ] && gautschi_mark="✓"
+                [ "$active_cluster" = "gilbreth" ] && gilbreth_mark="★"
+                [ "$active_cluster" = "gautschi" ] && gautschi_mark="★"
+                active_mark="  "
+                [ "$active" = "true" ] && active_mark="✓"
+                printf "  %-18s %-6s %-8s %-8s %-8s\n" "$current" "$active_mark" "$local_mark" "$gilbreth_mark" "$gautschi_mark"
+            fi
+            current="${BASH_REMATCH[1]}"
+            active=""
+            has_local=""
+            has_gilbreth=""
+            has_gautschi=""
+            active_cluster=""
+        elif [[ "$line" =~ active:[[:space:]]*(true|false) ]]; then
+            active="${BASH_REMATCH[1]}"
+        elif [[ "$line" =~ local:[[:space:]]*\"[^\"]+\" ]]; then
+            has_local="yes"
+        elif [[ "$line" =~ gilbreth:[[:space:]]*\"[^\"]+\" ]]; then
+            has_gilbreth="yes"
+        elif [[ "$line" =~ gautschi:[[:space:]]*\"[^\"]+\" ]]; then
+            has_gautschi="yes"
+        elif [[ "$line" =~ active_cluster:[[:space:]]*(gilbreth|gautschi) ]]; then
+            active_cluster="${BASH_REMATCH[1]}"
+        fi
+    done < "$BASECAMP_DIR/projects/projects.yaml"
+
+    # Print last project
+    if [ -n "$current" ]; then
+        local_mark="—"
+        gilbreth_mark="—"
+        gautschi_mark="—"
+        [ "$has_local" = "yes" ] && local_mark="✓"
+        [ "$has_gilbreth" = "yes" ] && gilbreth_mark="✓"
+        [ "$has_gautschi" = "yes" ] && gautschi_mark="✓"
+        [ "$active_cluster" = "gilbreth" ] && gilbreth_mark="★"
+        [ "$active_cluster" = "gautschi" ] && gautschi_mark="★"
+        active_mark="  "
+        [ "$active" = "true" ] && active_mark="✓"
+        printf "  %-18s %-6s %-8s %-8s %-8s\n" "$current" "$active_mark" "$local_mark" "$gilbreth_mark" "$gautschi_mark"
     fi
+
+    echo ""
+    echo "  Legend: ✓ = exists, ★ = active cluster, — = not deployed"
 }
 
-# Run checks
-case $CLUSTER in
+# Main
+print_header
+
+case $WHAT in
     gilbreth)
-        check_gilbreth
+        check_cluster gilbreth
         ;;
     gautschi)
-        check_gautschi
+        check_cluster gautschi
+        ;;
+    clusters)
+        check_cluster gilbreth
+        check_cluster gautschi
         ;;
     local)
         check_local
         ;;
-    repos)
-        show_repos
+    projects)
+        show_projects
         ;;
     all|*)
-        check_gilbreth
-        check_gautschi
+        check_cluster gilbreth
+        check_cluster gautschi
         check_local
-        show_repos
+        show_projects
         ;;
 esac
 

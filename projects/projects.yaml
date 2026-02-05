@@ -1,0 +1,73 @@
+# Project Registry
+# Track projects across local + both clusters
+
+projects:
+  upgd:
+    name: "UPGD Research"
+    description: "Utility-gated perturbations for continual learning (UAI 2026)"
+    active: true
+
+    # Locations (null = not deployed there yet)
+    locations:
+      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/2026_UAI"
+      gilbreth: "/scratch/gilbreth/shin283/upgd"
+      gautschi: "/scratch/gautschi/shin283/upgd"
+
+    # Last sync timestamps
+    last_sync:
+      local_to_gilbreth: null
+      local_to_gautschi: null
+      gilbreth_to_local: null
+      gautschi_to_local: null
+
+    # Current active cluster for experiments
+    active_cluster: gilbreth
+
+    tags: [upgd, uai2026, continual-learning]
+
+  memorization-survey:
+    name: "Memorization Survey"
+    description: "Survey paper on memorization (NeurIPS 2024)"
+    active: false
+
+    locations:
+      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/NeurIPS_2024"
+      gilbreth: null
+      gautschi: null
+
+    last_sync:
+      local_to_gilbreth: null
+      local_to_gautschi: null
+
+    active_cluster: null
+    tags: [memorization, neurips2024, survey]
+
+  icml2025:
+    name: "ICML 2025 Paper"
+    description: "Memorization & Plasticity relationship"
+    active: false
+
+    locations:
+      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/ICML2025_Template"
+      gilbreth: null
+      gautschi: null
+
+    last_sync: {}
+    active_cluster: null
+    tags: [icml2025, memorization, plasticity]
+
+# ─────────────────────────────────────────────────────────────
+# To add a new project:
+#
+#   project-id:
+#     name: "Display Name"
+#     description: "Brief description"
+#     active: true/false
+#     locations:
+#       local: "/path/on/mac"
+#       gilbreth: "/scratch/gilbreth/shin283/project-id"  # or null
+#       gautschi: "/scratch/gautschi/shin283/project-id"  # or null
+#     last_sync: {}
+#     active_cluster: gilbreth/gautschi/null
+#     tags: [tag1, tag2]
+# ─────────────────────────────────────────────────────────────

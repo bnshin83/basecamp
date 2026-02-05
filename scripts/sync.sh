@@ -1,122 +1,144 @@
 #!/bin/bash
-# Sync repository to cluster
+# Sync project between local and cluster (either direction)
 
 set -e
 
-REPO=$1
+PROJECT=$1
 CLUSTER=${2:-gilbreth}
-DRY_RUN=$3
+DIRECTION=${3:---push}  # --push (local→cluster) or --pull (cluster→local)
 
 BASECAMP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECTS_FILE="$BASECAMP_DIR/projects/projects.yaml"
 
-if [ -z "$REPO" ]; then
-    echo "Usage: ./sync.sh <repo_name or path> [cluster] [--dry-run]"
+usage() {
+    echo "Usage: ./sync.sh <project> [cluster] [--push|--pull] [--dry-run]"
     echo ""
-    echo "Repos:"
-    grep -E "^  [a-z].*:" "$BASECAMP_DIR/repos/repos.yaml" | sed 's/://g' | while read repo; do
-        echo "  • $repo"
-    done
+    echo "Projects:"
+    grep -E "^  [a-z0-9_-]+:$" "$PROJECTS_FILE" 2>/dev/null | sed 's/://g; s/^  /  • /'
     echo ""
     echo "Clusters: gilbreth, gautschi"
     echo ""
+    echo "Direction:"
+    echo "  --push     Local → Cluster (default)"
+    echo "  --pull     Cluster → Local"
+    echo "  --dry-run  Show what would be synced"
+    echo ""
     echo "Examples:"
-    echo "  ./sync.sh upgd-research gilbreth"
-    echo "  ./sync.sh memorization-survey gautschi"
-    echo "  ./sync.sh /path/to/repo gilbreth --dry-run"
+    echo "  ./sync.sh upgd gilbreth          # Push to gilbreth"
+    echo "  ./sync.sh upgd gautschi --pull   # Pull from gautschi"
+    echo "  ./sync.sh upgd gilbreth --dry-run"
+    exit 1
+}
+
+[ -z "$PROJECT" ] && usage
+
+# Parse args
+DRY_RUN=""
+for arg in "$@"; do
+    case $arg in
+        --push) DIRECTION="--push" ;;
+        --pull) DIRECTION="--pull" ;;
+        --dry-run) DRY_RUN="--dry-run" ;;
+        gilbreth|gautschi) CLUSTER="$arg" ;;
+    esac
+done
+
+# Get paths from projects.yaml
+get_project_path() {
+    local proj=$1
+    local loc=$2
+    # Extract path for location
+    awk "/^  $proj:/,/^  [a-z]/" "$PROJECTS_FILE" | grep "$loc:" | head -1 | sed 's/.*: *"//;s/".*//'
+}
+
+LOCAL_PATH=$(get_project_path "$PROJECT" "local")
+REMOTE_PATH=$(get_project_path "$PROJECT" "$CLUSTER")
+
+if [ -z "$LOCAL_PATH" ]; then
+    echo "Error: Project '$PROJECT' not found or no local path"
     exit 1
 fi
 
-# Resolve repo path from registry or use direct path
-if [ -f "$BASECAMP_DIR/repos/repos.yaml" ] && grep -q "^  $REPO:" "$BASECAMP_DIR/repos/repos.yaml"; then
-    # Get local path from registry
-    REPO_PATH=$(grep -A1 "^  $REPO:" "$BASECAMP_DIR/repos/repos.yaml" | grep "local_path" | sed 's/.*local_path: *"//;s/".*//')
-    REPO_NAME=$REPO
-
-    # Get remote path
-    REMOTE_PATH=$(grep -A10 "^  $REPO:" "$BASECAMP_DIR/repos/repos.yaml" | grep "$CLUSTER:" | head -1 | sed 's/.*: *"//;s/".*//')
-else
-    # Direct path
-    if [ -d "$REPO" ]; then
-        REPO_PATH=$(cd "$REPO" && pwd)
-    else
-        echo "Error: Repo '$REPO' not found in registry or as path"
-        exit 1
-    fi
-    REPO_NAME=$(basename "$REPO_PATH")
-    REMOTE_PATH="/scratch/$CLUSTER/shin283/$REPO_NAME"
+if [ -z "$REMOTE_PATH" ]; then
+    # Default remote path if not specified
+    REMOTE_PATH="/scratch/$CLUSTER/shin283/$PROJECT"
+    echo "Note: No remote path in config, using: $REMOTE_PATH"
 fi
 
 echo "═══════════════════════════════════════════════════════════"
-echo "  Sync: $REPO_NAME → $CLUSTER"
+if [ "$DIRECTION" = "--push" ]; then
+    echo "  Sync: $PROJECT (local → $CLUSTER)"
+else
+    echo "  Sync: $PROJECT ($CLUSTER → local)"
+fi
 echo "═══════════════════════════════════════════════════════════"
 echo ""
-echo "Local:  $REPO_PATH"
-echo "Remote: $REMOTE_PATH"
+echo "Local:  $LOCAL_PATH"
+echo "Remote: $CLUSTER:$REMOTE_PATH"
 
-# Default excludes
+# Excludes
 EXCLUDES=(
-    ".git"
-    "__pycache__"
-    "*.pyc"
-    "*.pyo"
-    ".env"
-    "*.pt"
-    "*.pth"
-    "*.ckpt"
-    "wandb"
-    "outputs"
-    "data"
-    ".DS_Store"
-    "*.log"
-    "node_modules"
-    ".venv"
-    "venv"
-    ".eggs"
-    "*.egg-info"
+    ".git" "__pycache__" "*.pyc" "*.pyo" ".env"
+    "*.pt" "*.pth" "*.ckpt" "wandb" "outputs" "data"
+    ".DS_Store" "*.log" "node_modules" ".venv" "venv"
+    ".eggs" "*.egg-info" "*.so" "*.o"
 )
 
-# Build exclude args
 EXCLUDE_ARGS=""
 for ex in "${EXCLUDES[@]}"; do
     EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude='$ex'"
 done
 
-DEST="$CLUSTER:$REMOTE_PATH/"
-
-# Pre-sync checks
+# Pre-sync check
 echo ""
-echo "Pre-sync checks:"
-cd "$REPO_PATH"
-if [ -d ".git" ]; then
-    CHANGES=$(git status --porcelain 2>/dev/null | wc -l)
+if [ "$DIRECTION" = "--push" ] && [ -d "$LOCAL_PATH/.git" ]; then
+    echo "Git status:"
+    cd "$LOCAL_PATH"
+    CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
     if [ "$CHANGES" -gt 0 ]; then
         echo "  ⚠️  $CHANGES uncommitted changes"
     else
-        echo "  ✅ Git clean"
+        echo "  ✅ Clean"
     fi
-    echo "  📍 Branch: $(git branch --show-current 2>/dev/null || echo 'N/A')"
+    BRANCH=$(git branch --show-current 2>/dev/null || echo "N/A")
+    echo "  Branch: $BRANCH"
 fi
 
-# Ensure remote directory exists
-echo ""
-echo "Ensuring remote directory exists..."
-ssh $CLUSTER "mkdir -p $REMOTE_PATH"
+# Ensure remote directory exists (for push)
+if [ "$DIRECTION" = "--push" ]; then
+    echo ""
+    echo "Ensuring remote directory exists..."
+    ssh $CLUSTER "mkdir -p $REMOTE_PATH"
+fi
 
 # Sync
 echo ""
-if [ "$DRY_RUN" = "--dry-run" ]; then
-    echo "Dry run (no changes):"
-    eval "rsync -avzn --progress $EXCLUDE_ARGS '$REPO_PATH/' '$DEST'"
+if [ "$DIRECTION" = "--push" ]; then
+    SRC="$LOCAL_PATH/"
+    DST="$CLUSTER:$REMOTE_PATH/"
 else
-    echo "Syncing..."
-    eval "rsync -avz --progress $EXCLUDE_ARGS '$REPO_PATH/' '$DEST'"
-
-    echo ""
-    echo "✅ Sync complete: $REPO_NAME → $CLUSTER"
-
-    # Update registry timestamp
-    TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    echo "$TIMESTAMP SYNC $REPO_NAME → $CLUSTER:$REMOTE_PATH" >> "$BASECAMP_DIR/logs/sync.log"
+    SRC="$CLUSTER:$REMOTE_PATH/"
+    DST="$LOCAL_PATH/"
 fi
 
+if [ -n "$DRY_RUN" ]; then
+    echo "Dry run:"
+    eval "rsync -avzn --progress $EXCLUDE_ARGS '$SRC' '$DST'"
+else
+    echo "Syncing..."
+    eval "rsync -avz --progress $EXCLUDE_ARGS '$SRC' '$DST'"
+
+    echo ""
+    echo "✅ Sync complete"
+
+    # Log
+    TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    if [ "$DIRECTION" = "--push" ]; then
+        echo "$TIMESTAMP SYNC $PROJECT local → $CLUSTER" >> "$BASECAMP_DIR/logs/sync.log"
+    else
+        echo "$TIMESTAMP SYNC $PROJECT $CLUSTER → local" >> "$BASECAMP_DIR/logs/sync.log"
+    fi
+fi
+
+echo ""
 echo "═══════════════════════════════════════════════════════════"
