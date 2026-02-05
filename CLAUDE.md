@@ -10,6 +10,18 @@ Manage research projects across local + gilbreth + gautschi clusters.
 | gautschi | gautschi.rcac.purdue.edu | /scratch/gautschi/shin283 |
 | local | Mac | ~/scratch |
 
+### Cluster Differences
+
+| Config | Gilbreth | Gautschi |
+|--------|----------|----------|
+| Partition | `a100-80gb` | `ai` |
+| QoS | — | `normal` |
+| Memory | `64G` | default |
+| CPUs | 14 | 14 |
+| Account | `jhaddock` | `jhaddock` |
+| Python env | Conda (`conda_envs/upgd`) | Venv (`.upgd`) |
+| Modules | `cuda` | `cuda`, `python` |
+
 ## Projects
 
 | Project | Local | Gilbreth | Gautschi | Active |

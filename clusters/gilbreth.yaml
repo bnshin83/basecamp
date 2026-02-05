@@ -15,16 +15,15 @@ paths:
 
 # SLURM defaults
 slurm:
-  partition: gpu
-  account: null
-  default_time: "24:00:00"
+  partition: a100-80gb
+  account: jhaddock
+  default_time: "3-00:00:00"
   default_gpus: 1
-  default_mem: "32G"
-  default_cpus: 8
+  default_mem: "64G"
+  default_cpus: 14
 
 # Environment setup
 environment:
   modules:
-    - anaconda
     - cuda
-  conda_env: ml
+  conda_env: /scratch/gilbreth/shin283/conda_envs/upgd
