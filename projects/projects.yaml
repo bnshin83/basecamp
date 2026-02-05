@@ -1,51 +1,87 @@
 # Project Registry
-# Track projects across local + both clusters
+# Track research projects across local + gilbreth + gautschi
 
 projects:
+  #─────────────────────────────────────────────────────────────
+  # ACTIVE: Currently working on
+  #─────────────────────────────────────────────────────────────
+
   upgd:
     name: "UPGD Research"
-    description: "Utility-gated perturbations for continual learning (UAI 2026)"
+    description: "Utility-gated perturbations for continual learning (UAI 2026) - Writing paper, figures done"
     active: true
+    status: "writing"  # writing, experiments, done
 
-    # Locations (null = not deployed there yet)
     locations:
       local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/2026_UAI"
       gilbreth: "/scratch/gilbreth/shin283/upgd"
       gautschi: "/scratch/gautschi/shin283/upgd"
 
-    # Last sync timestamps
     last_sync:
       local_to_gilbreth: null
       local_to_gautschi: null
-      gilbreth_to_local: null
-      gautschi_to_local: null
 
-    # Current active cluster for experiments
-    active_cluster: gilbreth
+    active_cluster: gilbreth  # Primary cluster for this project
+    tags: [upgd, uai2026, continual-learning, plasticity]
 
-    tags: [upgd, uai2026, continual-learning]
-
-  memorization-survey:
-    name: "Memorization Survey"
-    description: "Survey paper on memorization (NeurIPS 2024)"
+  memorization:
+    name: "Memorization Research"
+    description: "Diffusion model memorization replication (diffmem) - Next up after UPGD paper"
     active: false
+    status: "setup"  # setup, experiments, analysis
 
     locations:
-      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/NeurIPS_2024"
+      local: null  # Not yet on local
       gilbreth: null
-      gautschi: null
+      gautschi: "/scratch/gautschi/shin283/memorization"
 
-    last_sync:
-      local_to_gilbreth: null
-      local_to_gautschi: null
+    last_sync: {}
+    active_cluster: gautschi
+    tags: [memorization, diffusion, replication]
 
-    active_cluster: null
-    tags: [memorization, neurips2024, survey]
+  #─────────────────────────────────────────────────────────────
+  # RELATED: Other projects on clusters
+  #─────────────────────────────────────────────────────────────
 
-  icml2025:
-    name: "ICML 2025 Paper"
-    description: "Memorization & Plasticity relationship"
+  loss-of-plasticity:
+    name: "Loss of Plasticity"
+    description: "LOP experiments and analysis"
     active: false
+    status: "paused"
+
+    locations:
+      local: null
+      gilbreth: "/scratch/gilbreth/shin283/loss-of-plasticity"
+      gautschi: "/scratch/gautschi/shin283/loss-of-plasticity"
+
+    last_sync: {}
+    active_cluster: null
+    tags: [lop, plasticity]
+
+  csl-mem:
+    name: "CSL-Mem"
+    description: "Curvature-based sample-level memorization"
+    active: false
+    status: "done"
+
+    locations:
+      local: null
+      gilbreth: "/scratch/gilbreth/shin283/csl-mem"
+      gautschi: "/scratch/gautschi/shin283/csl-mem"
+
+    last_sync: {}
+    active_cluster: null
+    tags: [csl, memorization, curvature]
+
+  #─────────────────────────────────────────────────────────────
+  # PAPERS: Local paper writing (not on clusters)
+  #─────────────────────────────────────────────────────────────
+
+  icml2025-paper:
+    name: "ICML 2025 Paper"
+    description: "Memorization & Plasticity relationship paper"
+    active: false
+    status: "submitted"
 
     locations:
       local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/ICML2025_Template"
@@ -54,20 +90,19 @@ projects:
 
     last_sync: {}
     active_cluster: null
-    tags: [icml2025, memorization, plasticity]
+    tags: [icml2025, paper]
 
-# ─────────────────────────────────────────────────────────────
-# To add a new project:
-#
-#   project-id:
-#     name: "Display Name"
-#     description: "Brief description"
-#     active: true/false
-#     locations:
-#       local: "/path/on/mac"
-#       gilbreth: "/scratch/gilbreth/shin283/project-id"  # or null
-#       gautschi: "/scratch/gautschi/shin283/project-id"  # or null
-#     last_sync: {}
-#     active_cluster: gilbreth/gautschi/null
-#     tags: [tag1, tag2]
-# ─────────────────────────────────────────────────────────────
+  neurips2024-survey:
+    name: "NeurIPS 2024 Survey"
+    description: "Memorization survey paper"
+    active: false
+    status: "submitted"
+
+    locations:
+      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/NeurIPS_2024"
+      gilbreth: null
+      gautschi: null
+
+    last_sync: {}
+    active_cluster: null
+    tags: [neurips2024, survey, paper]

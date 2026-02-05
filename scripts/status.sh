@@ -15,7 +15,7 @@ check_cluster() {
     local CLUSTER=$1
 
     echo ""
-    echo "🖥️  $CLUSTER (${CLUSTER}.rcac.purdue.edu)"
+    echo "🖥️  $CLUSTER"
     echo "───────────────────────────────────────────────────────────"
 
     if ! ssh -o ConnectTimeout=5 -o BatchMode=yes $CLUSTER "echo ok" &>/dev/null; then
@@ -30,30 +30,17 @@ check_cluster() {
     PENDING=$(ssh $CLUSTER "squeue -u shin283 -h --state=pending 2>/dev/null | wc -l" | tr -d ' ')
     echo "  Jobs: $RUNNING running, $PENDING pending"
 
-    # Show running jobs
+    # Show running jobs if any
     if [ "$RUNNING" -gt 0 ]; then
         echo ""
-        ssh $CLUSTER "squeue -u shin283 --state=running --format='    %8i %20j %10M %4C %6m %R' 2>/dev/null" | head -6
-    fi
-
-    # Projects on this cluster
-    echo ""
-    echo "  Projects:"
-    PROJECTS=$(ssh $CLUSTER "ls -d /scratch/$CLUSTER/shin283/*/ 2>/dev/null | xargs -n1 basename" 2>/dev/null)
-    if [ -z "$PROJECTS" ]; then
-        echo "    (none)"
-    else
-        echo "$PROJECTS" | while read p; do
-            SIZE=$(ssh $CLUSTER "du -sh /scratch/$CLUSTER/shin283/$p 2>/dev/null | cut -f1")
-            printf "    %-20s %s\n" "$p" "$SIZE"
-        done
+        ssh $CLUSTER "squeue -u shin283 --state=running --format='    %8i %-20j %10M %R' 2>/dev/null | tail -n +2" | head -5
     fi
 }
 
 # Check local
 check_local() {
     echo ""
-    echo "💻 Local (Mac)"
+    echo "💻 Local"
     echo "───────────────────────────────────────────────────────────"
 
     # Running experiments
@@ -61,50 +48,44 @@ check_local() {
     echo "  Running experiments: $PROCS"
 
     # Disk
-    DISK=$(df -h ~ 2>/dev/null | tail -1 | awk '{print $4 " free of " $2}')
+    DISK=$(df -h ~ 2>/dev/null | tail -1 | awk '{print $4 " free"}')
     echo "  Disk: $DISK"
 }
 
 # Show all projects with locations
 show_projects() {
     echo ""
-    echo "📁 Projects Overview"
+    echo "📁 Projects"
     echo "───────────────────────────────────────────────────────────"
     echo ""
-    printf "  %-18s %-6s %-8s %-8s %-8s\n" "PROJECT" "ACTIVE" "LOCAL" "GILBRETH" "GAUTSCHI"
-    printf "  %-18s %-6s %-8s %-8s %-8s\n" "───────" "──────" "─────" "────────" "────────"
+    printf "  %-22s %-10s %-6s %-6s %-6s %s\n" "PROJECT" "STATUS" "LOCAL" "GILB" "GAUT" "NOTES"
+    printf "  %-22s %-10s %-6s %-6s %-6s %s\n" "───────" "──────" "─────" "────" "────" "─────"
 
-    # Simple YAML parsing
+    # Parse YAML
     local current=""
-    local active=""
+    local status=""
     local has_local=""
     local has_gilbreth=""
     local has_gautschi=""
     local active_cluster=""
+    local active=""
 
     while IFS= read -r line; do
         # New project
         if [[ "$line" =~ ^[[:space:]]{2}([a-z0-9_-]+):$ ]]; then
             # Print previous project
             if [ -n "$current" ]; then
-                local_mark="—"
-                gilbreth_mark="—"
-                gautschi_mark="—"
-                [ "$has_local" = "yes" ] && local_mark="✓"
-                [ "$has_gilbreth" = "yes" ] && gilbreth_mark="✓"
-                [ "$has_gautschi" = "yes" ] && gautschi_mark="✓"
-                [ "$active_cluster" = "gilbreth" ] && gilbreth_mark="★"
-                [ "$active_cluster" = "gautschi" ] && gautschi_mark="★"
-                active_mark="  "
-                [ "$active" = "true" ] && active_mark="✓"
-                printf "  %-18s %-6s %-8s %-8s %-8s\n" "$current" "$active_mark" "$local_mark" "$gilbreth_mark" "$gautschi_mark"
+                print_project_row
             fi
             current="${BASH_REMATCH[1]}"
-            active=""
+            status=""
             has_local=""
             has_gilbreth=""
             has_gautschi=""
             active_cluster=""
+            active=""
+        elif [[ "$line" =~ status:[[:space:]]*\"([^\"]+)\" ]]; then
+            status="${BASH_REMATCH[1]}"
         elif [[ "$line" =~ active:[[:space:]]*(true|false) ]]; then
             active="${BASH_REMATCH[1]}"
         elif [[ "$line" =~ local:[[:space:]]*\"[^\"]+\" ]]; then
@@ -120,21 +101,33 @@ show_projects() {
 
     # Print last project
     if [ -n "$current" ]; then
-        local_mark="—"
-        gilbreth_mark="—"
-        gautschi_mark="—"
-        [ "$has_local" = "yes" ] && local_mark="✓"
-        [ "$has_gilbreth" = "yes" ] && gilbreth_mark="✓"
-        [ "$has_gautschi" = "yes" ] && gautschi_mark="✓"
-        [ "$active_cluster" = "gilbreth" ] && gilbreth_mark="★"
-        [ "$active_cluster" = "gautschi" ] && gautschi_mark="★"
-        active_mark="  "
-        [ "$active" = "true" ] && active_mark="✓"
-        printf "  %-18s %-6s %-8s %-8s %-8s\n" "$current" "$active_mark" "$local_mark" "$gilbreth_mark" "$gautschi_mark"
+        print_project_row
     fi
 
     echo ""
-    echo "  Legend: ✓ = exists, ★ = active cluster, — = not deployed"
+    echo "  Legend: ✓=exists ★=active —=none"
+}
+
+print_project_row() {
+    local local_mark="—"
+    local gilbreth_mark="—"
+    local gautschi_mark="—"
+    local notes=""
+
+    [ "$has_local" = "yes" ] && local_mark="✓"
+    [ "$has_gilbreth" = "yes" ] && gilbreth_mark="✓"
+    [ "$has_gautschi" = "yes" ] && gautschi_mark="✓"
+
+    # Mark active cluster with star
+    [ "$active_cluster" = "gilbreth" ] && gilbreth_mark="★"
+    [ "$active_cluster" = "gautschi" ] && gautschi_mark="★"
+
+    # Add active indicator
+    if [ "$active" = "true" ]; then
+        notes="◀ ACTIVE"
+    fi
+
+    printf "  %-22s %-10s %-6s %-6s %-6s %s\n" "$current" "$status" "$local_mark" "$gilbreth_mark" "$gautschi_mark" "$notes"
 }
 
 # Main
