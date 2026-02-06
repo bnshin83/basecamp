@@ -10,9 +10,10 @@ active:
   - uai2026_supervised_gautschi_upgd_out
   - uai2026_supervised_gautschi_upgd_hid
   - uai2026_supervised_gilbreth_adam
-  - uai2026_supervised_gilbreth_ewc
-  - uai2026_supervised_gilbreth_mas
   - uai2026_supervised_gilbreth_sgd
+  - uai2026_rl_quicktest_ant_fixed
+  - uai2026_rl_quicktest_ant_ab
+  - uai2026_rl_quicktest_humanoid_fixed
 
 # Experiment records
 experiments:
@@ -25,7 +26,7 @@ experiments:
     id: "7537671"
     name: "SI baseline (all datasets x 5 seeds)"
     project: upgd
-    status: running
+    status: completed
     cluster: gautschi
     job_id: 7537671
     script: gautschi_si_all_datasets.sh
@@ -51,7 +52,7 @@ experiments:
     id: "7537672"
     name: "Shrink & Perturb baseline (all datasets x 5 seeds)"
     project: upgd
-    status: running
+    status: completed
     cluster: gautschi
     job_id: 7537672
     script: gautschi_snp_all_datasets.sh
@@ -70,7 +71,7 @@ experiments:
     id: "7537673"
     name: "SGD extra seeds (all datasets x 5 seeds)"
     project: upgd
-    status: running
+    status: completed
     cluster: gautschi
     job_id: 7537673
     script: gautschi_sgd_extra_seeds.sh
@@ -104,7 +105,7 @@ experiments:
       beta_utility: 0.9
     array_size: 20
     throttle: 8
-    notes: "Waiting on MaxCpuPerAccount — starts after SI/S&P/SGD wave"
+    notes: "HELD — pending RL quick tests. 8 done, 8 running, 4 held."
     tags: [uai2026, supervised, upgd, full]
 
   uai2026_supervised_gautschi_upgd_out:
@@ -154,12 +155,12 @@ experiments:
   # ─────────────────────────────────────────────────────────────
 
   uai2026_supervised_gilbreth_adam:
-    id: "10257411"
+    id: "10260099"
     name: "Adam baseline (all datasets x 5 seeds)"
     project: upgd
-    status: pending
+    status: running
     cluster: gilbreth
-    job_id: 10257411
+    job_id: 10260099
     script: gilbreth_adam_all_datasets.sh
     started: "2026-02-05T19:12:00"
     config:
@@ -173,56 +174,36 @@ experiments:
       beta2: 0.9999
     array_size: 20
     throttle: 6
-    notes: "Gilbreth under maintenance — auto-starts when back online"
+    notes: "HELD — 6 running (idx 0-5), 14 held pending RL quick tests"
     tags: [uai2026, supervised, adam, baseline]
 
   uai2026_supervised_gilbreth_ewc:
-    id: "10257412"
-    name: "EWC baseline (all datasets x 5 seeds)"
+    id: "10260100"
+    name: "EWC baseline — CANCELLED"
     project: upgd
-    status: pending
+    status: cancelled
     cluster: gilbreth
-    job_id: 10257412
-    script: gilbreth_ewc_all_datasets.sh
-    started: "2026-02-05T19:12:00"
-    config:
-      method: ewc
-      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
-      seeds: [0, 1, 2, 3, 4]
-      n_samples: 1000000
-      lr: 0.01
-      lamda: 1.0
-    array_size: 20
-    throttle: 6
-    tags: [uai2026, supervised, ewc, baseline]
+    job_id: 10260100
+    notes: "Dropped — forgetting-focused method, not needed for plasticity paper"
+    tags: [uai2026, supervised, ewc, cancelled]
 
   uai2026_supervised_gilbreth_mas:
-    id: "10257413"
-    name: "MAS baseline (all datasets x 5 seeds)"
+    id: "10260101"
+    name: "MAS baseline — CANCELLED"
     project: upgd
-    status: pending
+    status: cancelled
     cluster: gilbreth
-    job_id: 10257413
-    script: gilbreth_mas_all_datasets.sh
-    started: "2026-02-05T19:12:00"
-    config:
-      method: mas
-      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
-      seeds: [0, 1, 2, 3, 4]
-      n_samples: 1000000
-      lr: 0.01
-      lamda: 1.0
-    array_size: 20
-    throttle: 6
-    tags: [uai2026, supervised, mas, baseline]
+    job_id: 10260101
+    notes: "Dropped — forgetting-focused method, not needed for plasticity paper"
+    tags: [uai2026, supervised, mas, cancelled]
 
   uai2026_supervised_gilbreth_sgd:
-    id: "10257414"
+    id: "10260102"
     name: "SGD extra seeds (all datasets x 5 seeds)"
     project: upgd
-    status: pending
+    status: held
     cluster: gilbreth
-    job_id: 10257414
+    job_id: 10260102
     script: gilbreth_sgd_extra_seeds.sh
     started: "2026-02-05T19:12:00"
     config:
@@ -234,3 +215,65 @@ experiments:
     array_size: 20
     throttle: 6
     tags: [uai2026, supervised, sgd, baseline]
+    notes: "HELD — all 20 tasks held pending RL quick tests"
+
+  # ─────────────────────────────────────────────────────────────
+  # UAI 2026 RL Quick Tests — Optimizer A/B Comparison (Feb 6)
+  # ─────────────────────────────────────────────────────────────
+
+  uai2026_rl_quicktest_ant_fixed:
+    id: "7563423"
+    name: "RL Quick Test: Ant-v4 (fixed optimizer, 4 methods)"
+    project: upgd
+    status: pending
+    cluster: gautschi
+    job_id: 7563423
+    script: quick_test_ant_fixed.sh
+    started: "2026-02-06T17:00:00"
+    config:
+      env: Ant-v4
+      methods: [upgd_full, upgd_output_only, upgd_hidden_only, adam]
+      optimizer_class: RLLayerSelectiveUPGD
+      seed: 42
+      total_timesteps: 2000000
+    array_size: 4
+    notes: "All modes use RLLayerSelectiveUPGD (with global_max_util clamp)"
+    tags: [uai2026, rl, quicktest, ant, fixed]
+
+  uai2026_rl_quicktest_ant_ab:
+    id: "7563489"
+    name: "RL Quick Test: Ant-v4 (old AdaptiveUPGD for A/B comparison)"
+    project: upgd
+    status: pending
+    cluster: gautschi
+    job_id: 7563489
+    script: quick_test_ant_ab_compare.sh
+    started: "2026-02-06T17:00:00"
+    config:
+      env: Ant-v4
+      methods: [upgd_full_old]
+      optimizer_class: AdaptiveUPGD
+      seed: 42
+      total_timesteps: 2000000
+    array_size: 1
+    notes: "A/B comparison: old optimizer (no clamp) vs fixed (with clamp)"
+    tags: [uai2026, rl, quicktest, ant, ab_compare]
+
+  uai2026_rl_quicktest_humanoid_fixed:
+    id: "10262040"
+    name: "RL Quick Test: Humanoid-v4 (fixed optimizer, 4 methods)"
+    project: upgd
+    status: pending
+    cluster: gilbreth
+    job_id: 10262040
+    script: quick_test_humanoid_fixed.sh
+    started: "2026-02-06T17:00:00"
+    config:
+      env: Humanoid-v4
+      methods: [upgd_full, upgd_output_only, upgd_hidden_only, adam]
+      optimizer_class: RLLayerSelectiveUPGD
+      seed: 42
+      total_timesteps: 2000000
+    array_size: 4
+    notes: "Strong joint-shift env — Full UPGD should have largest advantage"
+    tags: [uai2026, rl, quicktest, humanoid, fixed]
