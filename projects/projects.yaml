@@ -8,20 +8,24 @@ projects:
 
   upgd:
     name: "UPGD Research"
-    description: "Utility-gated perturbations for continual learning (UAI 2026) - Writing paper, figures done"
+    description: "Utility-gated perturbations for continual learning (UAI 2026) - Running supervised baselines (123 new runs)"
     active: true
-    status: "writing"  # writing, experiments, done
+    status: "experiments"  # writing, experiments, done
 
     locations:
-      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/2026_UAI"
+      local: "/Users/bnsmac/Library/CloudStorage/OneDrive-purdue.edu(2)/Memorization_Research/meeting/05202025 Literature/UAI_2026"
       gilbreth: "/scratch/gilbreth/shin283/upgd"
       gautschi: "/scratch/gautschi/shin283/upgd"
 
     last_sync:
-      local_to_gilbreth: null
-      local_to_gautschi: null
+      local_to_gilbreth: "2026-02-05T19:12:00"
+      local_to_gautschi: "2026-02-05T19:12:00"
 
-    active_cluster: gilbreth  # Primary cluster for this project
+    active_cluster: both  # Using both clusters for this campaign
+    active_experiments:
+      gautschi: [7537671, 7537672, 7537673, 7537674, 7537675, 7537676]
+      gilbreth: [10257411, 10257412, 10257413, 10257414]
+    expected_completion: "2026-02-07T12:00:00"
     tags: [upgd, uai2026, continual-learning, plasticity]
 
   memorization:

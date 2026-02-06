@@ -2,31 +2,235 @@
 # Track all experiments across clusters and repos
 
 # Active experiments
-active: []
+active:
+  - uai2026_supervised_gautschi_si
+  - uai2026_supervised_gautschi_snp
+  - uai2026_supervised_gautschi_sgd
+  - uai2026_supervised_gautschi_upgd_full
+  - uai2026_supervised_gautschi_upgd_out
+  - uai2026_supervised_gautschi_upgd_hid
+  - uai2026_supervised_gilbreth_adam
+  - uai2026_supervised_gilbreth_ewc
+  - uai2026_supervised_gilbreth_mas
+  - uai2026_supervised_gilbreth_sgd
 
 # Experiment records
-experiments: {}
+experiments:
 
-# Example entry:
-# experiments:
-#   exp_001_baseline:
-#     id: exp_001
-#     name: baseline
-#     status: completed  # pending, running, completed, failed
-#     cluster: rcac
-#     job_id: 12345678
-#     repo: memorization-research
-#     branch: main
-#     config: configs/baseline.yaml
-#     started: 2024-01-10T10:00:00
-#     completed: 2024-01-10T18:30:00
-#     runtime: "8h 30m"
-#     results:
-#       accuracy: 94.5
-#       loss: 0.023
-#     artifacts:
-#       checkpoint: /scratch/user/checkpoints/exp_001/best.pt
-#       logs: /scratch/user/logs/12345678.out
-#       metrics: outputs/exp_001/metrics.json
-#     notes: "Baseline model for comparison"
-#     tags: [baseline, cifar10]
+  # ─────────────────────────────────────────────────────────────
+  # UAI 2026 Supervised Baselines — Gautschi
+  # ─────────────────────────────────────────────────────────────
+
+  uai2026_supervised_gautschi_si:
+    id: "7537671"
+    name: "SI baseline (all datasets x 5 seeds)"
+    project: upgd
+    status: running
+    cluster: gautschi
+    job_id: 7537671
+    script: gautschi_si_all_datasets.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: si
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.001
+      lamda: 1.0
+    array_size: 20
+    throttle: 8
+    artifacts:
+      logs: "/scratch/gautschi/shin283/upgd/logs/7537671_*"
+      results: "logs/{task}/si/fully_connected_relu_with_hooks/seed_{s}/stats_curvature.json"
+    wandb:
+      project: upgd
+      entity: shin283-purdue-university
+    tags: [uai2026, supervised, si, baseline]
+
+  uai2026_supervised_gautschi_snp:
+    id: "7537672"
+    name: "Shrink & Perturb baseline (all datasets x 5 seeds)"
+    project: upgd
+    status: running
+    cluster: gautschi
+    job_id: 7537672
+    script: gautschi_snp_all_datasets.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: shrink_and_perturb
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      per_dataset_hparams: true
+    array_size: 20
+    throttle: 8
+    tags: [uai2026, supervised, snp, baseline]
+
+  uai2026_supervised_gautschi_sgd:
+    id: "7537673"
+    name: "SGD extra seeds (all datasets x 5 seeds)"
+    project: upgd
+    status: running
+    cluster: gautschi
+    job_id: 7537673
+    script: gautschi_sgd_extra_seeds.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: sgd
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      per_dataset_hparams: true
+    array_size: 20
+    throttle: 8
+    tags: [uai2026, supervised, sgd, baseline]
+
+  uai2026_supervised_gautschi_upgd_full:
+    id: "7537674"
+    name: "UPGD Full extra seeds (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gautschi
+    job_id: 7537674
+    script: gautschi_upgd_full_extra_seeds.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: upgd_fo_global
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.01
+      sigma: 0.001
+      beta_utility: 0.9
+    array_size: 20
+    throttle: 8
+    notes: "Waiting on MaxCpuPerAccount — starts after SI/S&P/SGD wave"
+    tags: [uai2026, supervised, upgd, full]
+
+  uai2026_supervised_gautschi_upgd_out:
+    id: "7537675"
+    name: "UPGD Output-Only extra seeds (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gautschi
+    job_id: 7537675
+    script: gautschi_upgd_outputonly_extra_seeds.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: upgd_fo_global_outputonly
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.01
+      sigma: 0.001
+      beta_utility: 0.9
+    array_size: 20
+    throttle: 8
+    tags: [uai2026, supervised, upgd, outputonly]
+
+  uai2026_supervised_gautschi_upgd_hid:
+    id: "7537676"
+    name: "UPGD Hidden-Only extra seeds (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gautschi
+    job_id: 7537676
+    script: gautschi_upgd_hiddenonly_extra_seeds.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: upgd_fo_global_hiddenonly
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.01
+      sigma: 0.001
+      beta_utility: 0.9
+    array_size: 20
+    throttle: 8
+    tags: [uai2026, supervised, upgd, hiddenonly]
+
+  # ─────────────────────────────────────────────────────────────
+  # UAI 2026 Supervised Baselines — Gilbreth
+  # ─────────────────────────────────────────────────────────────
+
+  uai2026_supervised_gilbreth_adam:
+    id: "10257411"
+    name: "Adam baseline (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gilbreth
+    job_id: 10257411
+    script: gilbreth_adam_all_datasets.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: adam
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.0001
+      weight_decay: 0.1
+      beta1: 0.0
+      beta2: 0.9999
+    array_size: 20
+    throttle: 6
+    notes: "Gilbreth under maintenance — auto-starts when back online"
+    tags: [uai2026, supervised, adam, baseline]
+
+  uai2026_supervised_gilbreth_ewc:
+    id: "10257412"
+    name: "EWC baseline (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gilbreth
+    job_id: 10257412
+    script: gilbreth_ewc_all_datasets.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: ewc
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.01
+      lamda: 1.0
+    array_size: 20
+    throttle: 6
+    tags: [uai2026, supervised, ewc, baseline]
+
+  uai2026_supervised_gilbreth_mas:
+    id: "10257413"
+    name: "MAS baseline (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gilbreth
+    job_id: 10257413
+    script: gilbreth_mas_all_datasets.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: mas
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      lr: 0.01
+      lamda: 1.0
+    array_size: 20
+    throttle: 6
+    tags: [uai2026, supervised, mas, baseline]
+
+  uai2026_supervised_gilbreth_sgd:
+    id: "10257414"
+    name: "SGD extra seeds (all datasets x 5 seeds)"
+    project: upgd
+    status: pending
+    cluster: gilbreth
+    job_id: 10257414
+    script: gilbreth_sgd_extra_seeds.sh
+    started: "2026-02-05T19:12:00"
+    config:
+      method: sgd
+      datasets: [emnist, cifar10, mini_imagenet, input_mnist]
+      seeds: [0, 1, 2, 3, 4]
+      n_samples: 1000000
+      per_dataset_hparams: true
+    array_size: 20
+    throttle: 6
+    tags: [uai2026, supervised, sgd, baseline]
